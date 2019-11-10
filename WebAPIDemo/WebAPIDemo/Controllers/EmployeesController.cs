@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Web.Http;
 using WebAPIDemo.Data;
 
@@ -23,6 +20,15 @@ namespace WebAPIDemo.Controllers
             using (EmployeeDBEntities context = new EmployeeDBEntities())
             {
                 return context.Employees.SingleOrDefault(ee => ee.Id == id);
+            }
+        }
+
+        public void Post([FromBody] Employee employee)
+        {
+            using (EmployeeDBEntities context = new EmployeeDBEntities())
+            {
+                context.Employees.Add(employee);
+                context.SaveChanges();
             }
         }
     }
