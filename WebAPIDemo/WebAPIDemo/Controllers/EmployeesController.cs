@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Web.Http;
 using WebAPIDemo.Data;
 
@@ -15,20 +18,46 @@ namespace WebAPIDemo.Controllers
             }
         }
 
-        public Employee Get(int id)
+        public HttpResponseMessage Get(int id)
         {
             using (EmployeeDBEntities context = new EmployeeDBEntities())
             {
-                return context.Employees.SingleOrDefault(ee => ee.Id == id);
+                var entity = context.Employees.SingleOrDefault(ee => ee.Id == id);
+
+                if (entity != null)
+                {
+                    return Request.CreateResponse(System.Net.HttpStatusCode.OK, entity);
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(System.Net.HttpStatusCode.NotFound, $"Employee with id = {id.ToString(new CultureInfo("en-US"))} not found.");
+                }
             }
         }
 
-        public void Post([FromBody] Employee employee)
+        public HttpResponseMessage Post([FromBody] Employee employee)
         {
-            using (EmployeeDBEntities context = new EmployeeDBEntities())
+            try
             {
-                context.Employees.Add(employee);
-                context.SaveChanges();
+                using (EmployeeDBEntities context = new EmployeeDBEntities())
+                {
+                    if (employee == null)
+                    {
+                        throw new ArgumentNullException(nameof(employee));
+                    }
+
+                    context.Employees.Add(employee);
+                    context.SaveChanges();
+
+                    var message = Request.CreateResponse(System.Net.HttpStatusCode.Created, employee);
+                    message.Headers.Location = new Uri(Request.RequestUri + employee.Id.ToString(new CultureInfo("en-US")));
+
+                    return message;
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(System.Net.HttpStatusCode.BadRequest, ex);
             }
         }
     }
